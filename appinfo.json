@@ -5,7 +5,7 @@
         "configurable"
     ],
     "companyName": "ALEEF02",
-    "longName": "SOS",
+    "longName": "Health App",
     "projectType": "pebblejs",
     "resources": {
         "media": [
@@ -30,6 +30,16 @@
                 "type": "font"
             },
             {
+                "file": "images/minus.png",
+                "name": "IMAGES_MINUS_PNG",
+                "type": "png"
+            },
+            {
+                "file": "images/Plus.png",
+                "name": "IMAGES_PLUS_PNG",
+                "type": "png"
+            },
+            {
                 "file": "images/Icon",
                 "menuIcon": true,
                 "name": "IMAGES_ICON",
@@ -38,7 +48,7 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "SOS",
+    "shortName": "Health",
     "targetPlatforms": [
         "aplite",
         "basalt"

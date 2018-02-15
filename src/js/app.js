@@ -6,6 +6,7 @@ Pebble.addEventListener('showConfiguration', function(e) {
 
 var firstName = localStorage.getItem('name') || 'None';
 var UI = require('ui');
+var Vector2 = require('vector2');
 var restart = new UI.Card({
   title: 'Restart App',
   body: 'Your name and key (hidden) have been registered. Close and open the app to start functionality'
@@ -58,8 +59,8 @@ var options = {
 //Define functions for Location handling
 
 var main = new UI.Card({
-  title: 'Send SOS',
-  subtitle: 'Press select to send an SOS'
+  title: 'Welcome!',
+  body: 'Press up to use the water counter and press select to send an SOS'
 });
 
 var no_pos = new UI.Card({
@@ -67,6 +68,47 @@ var no_pos = new UI.Card({
   body: 'No GPS signal has been detected. Click up to try to find GPS and send, down to send without GPS or back to cancel'
 });
 
+var waterWin = new UI.Window({
+    fullscreen: true,
+  });
+
+var background = new UI.Rect({
+    position: new Vector2(0, 0),
+    size: new Vector2(144, 168),
+    backgroundColor: 'white'
+  });
+
+var cup = new UI.Rect({
+  position: new Vector2(40, 80),
+  size: new Vector2(64, 85),
+  borderColor: 'black'
+});
+
+var sidebar = new UI.Rect({
+  position: new Vector2(128, 20),
+  size: new Vector2(18, 120),
+  backgroundColor: 'black'
+});
+
+var add = new UI.Image({
+  position: new Vector2(128, 35),
+  size: new Vector2(16, 16),
+  backgroundColor: 'clear',
+  image: 'images/Plus.png',
+});
+
+var subtract = new UI.Image({
+  position: new Vector2(128, 115),
+  size: new Vector2(16, 16),
+  backgroundColor: 'clear',
+  image: 'images/minus.png',
+});
+
+waterWin.add(background);
+waterWin.add(cup);
+waterWin.add(sidebar);
+waterWin.add(add);
+waterWin.add(subtract);
 main.show();
 //Define and show main interface
 navigator.geolocation.getCurrentPosition(success, error, options);
@@ -97,6 +139,11 @@ function sendSOS() {
   updating = false;
   //Define and show the sent card
 }
+
+main.on('click', 'up', function(e) {
+  //When up button in main UI clicked..
+  waterWin.show();
+});
 
 main.on('click', 'select', function(e) {
   //When middle button in main UI clicked..
