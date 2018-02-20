@@ -30,6 +30,11 @@
                 "type": "font"
             },
             {
+                "file": "images/enter.png",
+                "name": "IMAGES_ENTER_PNG",
+                "type": "png"
+            },
+            {
                 "file": "images/minus.png",
                 "name": "IMAGES_MINUS_PNG",
                 "type": "png"

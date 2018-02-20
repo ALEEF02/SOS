@@ -91,23 +91,31 @@ var sidebar = new UI.Rect({
 });
 
 var add = new UI.Image({
-  position: new Vector2(128, 35),
+  position: new Vector2(129, 33),
   size: new Vector2(16, 16),
   backgroundColor: 'clear',
   image: 'images/Plus.png',
 });
 
 var subtract = new UI.Image({
-  position: new Vector2(128, 115),
+  position: new Vector2(129, 117),
   size: new Vector2(16, 16),
   backgroundColor: 'clear',
   image: 'images/minus.png',
+});
+
+var submit = new UI.Image({
+  position: new Vector2(130, 75),
+  size: new Vector2(16, 16),
+  backgroundColor: 'clear',
+  image: 'images/enter.png',
 });
 
 waterWin.add(background);
 waterWin.add(cup);
 waterWin.add(sidebar);
 waterWin.add(add);
+waterWin.add(submit);
 waterWin.add(subtract);
 main.show();
 //Define and show main interface
