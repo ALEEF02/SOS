@@ -5,6 +5,7 @@ Pebble.addEventListener('showConfiguration', function(e) {
 });
 
 var firstName = localStorage.getItem('name') || 'None';
+var goal = localStorage.getItem('goal') || 64;
 var UI = require('ui');
 var Vector2 = require('vector2');
 var restart = new UI.Card({
@@ -20,11 +21,13 @@ Pebble.addEventListener('webviewclosed', function(e) {
 
   var secret_key = payload.s_key;
   var firstName = payload.fName;
+  goal = payload.wGoal;
   //Set secret key and name then log name
   
   console.log(firstName);
   
   localStorage.setItem('key', secret_key);
+  localStorage.setItem('goal', goal);
   if (firstName !== "" || firstName !== "None") { 
     localStorage.setItem('name', firstName);
   }
@@ -35,6 +38,19 @@ Pebble.addEventListener('webviewclosed', function(e) {
 var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
 //Get UI and set key from memory
+var water = localStorage.getItem('water') || 0;
+var date = new Date();
+var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
+var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
+if (today !== loggedDate) {
+  water = 0;
+  localStorage.setItem('water', water);
+  console.log("Different day... Current: " + today + "  Logged: " + loggedDate);
+  localStorage.setItem('date', today);
+} else {
+  console.log("Same day... Current: " + today + "  Logged: " + loggedDate);
+  localStorage.setItem('date', loggedDate);
+}
 var latitude = 0.00000;
 var longitude = 0.00000;
 var response = 'N/A';
@@ -68,9 +84,8 @@ var no_pos = new UI.Card({
   body: 'No GPS signal has been detected. Click up to try to find GPS and send, down to send without GPS or back to cancel'
 });
 
-var waterWin = new UI.Window({
-    fullscreen: true,
-  });
+var waterWin = new UI.Window({});
+waterWin.status(false);
 
 var background = new UI.Rect({
     position: new Vector2(0, 0),
