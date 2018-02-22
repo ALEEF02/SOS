@@ -25,6 +25,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
   //Set secret key and name then log name
   
   console.log(firstName);
+  console.log(goal + " is goal");
   
   localStorage.setItem('key', secret_key);
   localStorage.setItem('goal', goal);
@@ -39,6 +40,7 @@ var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
 //Get UI and set key from memory
 var water = localStorage.getItem('water') || 0;
+var adding = 0;
 var date = new Date();
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
@@ -126,12 +128,51 @@ var submit = new UI.Image({
   image: 'images/enter.png',
 });
 
+var currentLabel = new UI.Text({
+    position: new Vector2(5, 5),
+    size: new Vector2(144, 30),
+    font: 'gothic_14_bold',
+    text: 'Current water:',
+    color: 'black',
+    textAlign: 'left'
+  });
+
+var currentWater = new UI.Text({
+    position: new Vector2(98, 5),
+    size: new Vector2(144, 30),
+    font: 'gothic_14_bold',
+    text: water + ' OZ',
+    color: 'black',
+    textAlign: 'left'
+  });
+
+var goalLabel = new UI.Text({
+    position: new Vector2(5, 15),
+    size: new Vector2(144, 30),
+    font: 'gothic_14_bold',
+    text: 'Current goal:',
+    color: 'black',
+    textAlign: 'left'
+  });
+
+var goalOs = new UI.Text({
+    position: new Vector2(85, 15),
+    size: new Vector2(30, 30),
+    font: 'gothic_14_bold',
+    text: goal + ' OZ',
+    color: 'black',
+    textAlign: 'right'
+  });
 waterWin.add(background);
 waterWin.add(cup);
 waterWin.add(sidebar);
 waterWin.add(add);
 waterWin.add(submit);
 waterWin.add(subtract);
+waterWin.add(currentLabel);
+waterWin.add(currentWater);
+waterWin.add(goalOs);
+waterWin.add(goalLabel);
 main.show();
 //Define and show main interface
 navigator.geolocation.getCurrentPosition(success, error, options);
