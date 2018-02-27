@@ -42,6 +42,7 @@ var secret_key = localStorage.getItem('key') || 'No Key';
 var water = localStorage.getItem('water') || 0;
 var change = 4;
 var adding = 0;
+var cupValue = 0;
 var date = new Date();
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
@@ -100,6 +101,19 @@ var cup = new UI.Rect({
   position: new Vector2(40, 80),
   size: new Vector2(64, 85),
   borderColor: 'black'
+});
+
+if (water > goal) {
+  cupValue = goal;
+} else {
+  cupValue = water;
+}
+
+var filling = new UI.Rect({
+  position: new Vector2(40, (165 - (85 * (cupValue / goal)))),
+  size: new Vector2(64, (85 * (cupValue / goal))),
+  borderColor: 'black',
+  backgroundColor: 'blue'
 });
 
 var sidebar = new UI.Rect({
@@ -205,6 +219,7 @@ waterWin.add(goalLabel);
 waterWin.add(addingOs);
 waterWin.add(addLabel);
 waterWin.add(pORm);
+waterWin.add(filling);
 main.show();
 //Define and show main interface
 navigator.geolocation.getCurrentPosition(success, error, options);
@@ -308,9 +323,22 @@ waterWin.on('click', 'down', function(e) {
 });
 
 waterWin.on('click', 'select', function(e) {
-  water = (adding + water);
+  if (adding > 0) {
+    water = (adding + water);
+    console.log (water + " current water");
+  } else if (adding < 0 && (water + adding) >= 0) {
+    water = (adding + water);
+    console.log (water + " current water");
+  }
   currentWater.text(water + ' OZ');
   localStorage.setItem('water', water);
+  if (water > goal) {
+    cupValue = goal;
+  } else {
+    cupValue = water;
+  }
+  filling.position(new Vector2(40, (165 - (85 * (cupValue / goal)))));
+  filling.size(new Vector2(64, (85 * (cupValue / goal))));
 });
 
 waterWin.on('longClick', 'up', function(e) {
@@ -330,6 +358,8 @@ waterWin.on('longClick', 'select', function(e) {
   change = 4;
   localStorage.setItem('water', water);
   currentWater.text(water + ' OZ');
+  addingOs.text(adding + ' OZ');
+  pORm.text('Change by ' + change + ' OZ. \nHold + or - to change');
 });
 
 waterWin.on('longClick', 'down', function(e) {
