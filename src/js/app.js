@@ -40,10 +40,12 @@ var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
 //Get UI and set key from memory
 var water = localStorage.getItem('water') || 0;
+var change = 4;
 var adding = 0;
 var date = new Date();
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
+//console.log("Today: " + today + " Date in memory: " + loggedDate);
 if (today !== loggedDate) {
   water = 0;
   localStorage.setItem('water', water);
@@ -51,7 +53,6 @@ if (today !== loggedDate) {
   localStorage.setItem('date', today);
 } else {
   console.log("Same day... Current: " + today + "  Logged: " + loggedDate);
-  localStorage.setItem('date', loggedDate);
 }
 var latitude = 0.00000;
 var longitude = 0.00000;
@@ -129,40 +130,68 @@ var submit = new UI.Image({
 });
 
 var currentLabel = new UI.Text({
-    position: new Vector2(5, 5),
+    position: new Vector2(2, 5),
     size: new Vector2(144, 30),
     font: 'gothic_14_bold',
     text: 'Current water:',
     color: 'black',
     textAlign: 'left'
-  });
+});
 
 var currentWater = new UI.Text({
-    position: new Vector2(98, 5),
-    size: new Vector2(144, 30),
+    position: new Vector2(88, 5),
+    size: new Vector2(39, 30),
     font: 'gothic_14_bold',
     text: water + ' OZ',
     color: 'black',
-    textAlign: 'left'
-  });
+    textAlign: 'right'
+});
 
 var goalLabel = new UI.Text({
-    position: new Vector2(5, 15),
+    position: new Vector2(2, 20),
     size: new Vector2(144, 30),
     font: 'gothic_14_bold',
     text: 'Current goal:',
     color: 'black',
     textAlign: 'left'
-  });
+});
 
 var goalOs = new UI.Text({
-    position: new Vector2(85, 15),
-    size: new Vector2(30, 30),
+    position: new Vector2(87, 20),
+    size: new Vector2(40, 30),
     font: 'gothic_14_bold',
     text: goal + ' OZ',
     color: 'black',
     textAlign: 'right'
-  });
+});
+
+var addLabel = new UI.Text({
+    position: new Vector2(2, 35),
+    size: new Vector2(144, 30),
+    font: 'gothic_14_bold',
+    text: 'Amount to add:',
+    color: 'black',
+    textAlign: 'left'
+});
+
+var addingOs = new UI.Text({
+    position: new Vector2(87, 35),
+    size: new Vector2(40, 30),
+    font: 'gothic_14_bold',
+    text: adding + ' OZ',
+    color: 'black',
+    textAlign: 'right'
+});
+
+var pORm = new UI.Text({
+    position: new Vector2(2, 50),
+    size: new Vector2(125, 30),
+    font: 'gothic_14_bold',
+    text: 'Change by ' + change + ' OZ. \nHold + or - to change',
+    color: 'black',
+    textAlign: 'center'
+});
+
 waterWin.add(background);
 waterWin.add(cup);
 waterWin.add(sidebar);
@@ -173,6 +202,9 @@ waterWin.add(currentLabel);
 waterWin.add(currentWater);
 waterWin.add(goalOs);
 waterWin.add(goalLabel);
+waterWin.add(addingOs);
+waterWin.add(addLabel);
+waterWin.add(pORm);
 main.show();
 //Define and show main interface
 navigator.geolocation.getCurrentPosition(success, error, options);
@@ -263,4 +295,50 @@ no_pos.on('click', 'down', function(e) {
     no_pos.hide();
     sendSOS();
   }
+});
+
+waterWin.on('click', 'up', function(e) {
+  adding = (adding + change);
+  addingOs.text(adding + ' OZ');
+});
+
+waterWin.on('click', 'down', function(e) {
+  adding = (adding - change);
+  addingOs.text(adding + ' OZ');
+});
+
+waterWin.on('click', 'select', function(e) {
+  water = (adding + water);
+  currentWater.text(water + ' OZ');
+  localStorage.setItem('water', water);
+});
+
+waterWin.on('longClick', 'up', function(e) {
+  if (change == 2) {
+      change = 4;
+    } else if (change == 4) {
+      change = 8;
+    } else if (change == 8) {
+      change = 16;
+    }
+    pORm.text('Change by ' + change + ' OZ. Hold + or - to change');
+});
+
+waterWin.on('longClick', 'select', function(e) {
+  water = 0;
+  adding = 0;
+  change = 4;
+  localStorage.setItem('water', water);
+  currentWater.text(water + ' OZ');
+});
+
+waterWin.on('longClick', 'down', function(e) {
+  if (change == 4) {
+      change = 2;
+    } else if (change == 8) {
+      change = 4;
+    } else if (change == 16) {
+      change = 8;
+    }
+    pORm.text('Change by ' + change + ' OZ. Hold + or - to change');
 });
