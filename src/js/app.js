@@ -7,10 +7,18 @@ Pebble.addEventListener('showConfiguration', function(e) {
 var firstName = localStorage.getItem('name') || 'None';
 var goal = localStorage.getItem('goal') || 64;
 var UI = require('ui');
+var timeline = require('timeline');
+var timeline2 = require('./timeline2');
+var Vibe = require('ui/vibe');
 var Vector2 = require('vector2');
 var restart = new UI.Card({
   title: 'Restart App',
   body: 'Your name and key (hidden) have been registered. Close and open the app to start functionality'
+});
+Pebble.timelineSubscribe('all-pins', function() {
+    console.log('Successfully subscribed to pins');
+}, function() {
+    console.log('Failed to subscribe to pins!');
 });
 
 Pebble.addEventListener('webviewclosed', function(e) {
@@ -18,8 +26,10 @@ Pebble.addEventListener('webviewclosed', function(e) {
   //On config submitted
   var payload = JSON.parse(e.response);
   //Take config input and parse with JSON
-
-  var secret_key = payload.s_key;
+  var secret_key = localStorage.getItem('key') || 'No Key';
+  if (payload.s_key != "") {
+    secret_key = payload.s_key;
+  }
   var firstName = payload.fName;
   goal = payload.wGoal;
   //Set secret key and name then log name
@@ -40,6 +50,7 @@ var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
 //Get UI and set key from memory
 var water = localStorage.getItem('water') || 0;
+water = Number(water);
 var change = 4;
 var adding = 0;
 var cupValue = 0;
@@ -82,12 +93,10 @@ var main = new UI.Card({
   title: 'Welcome!',
   body: 'Press up to use the water counter and press select to send an SOS'
 });
-
 var no_pos = new UI.Card({
   title: 'No GPS!',
   body: 'No GPS signal has been detected. Click up to try to find GPS and send, down to send without GPS or back to cancel'
 });
-
 var waterWin = new UI.Window({});
 waterWin.status(false);
 
@@ -96,10 +105,9 @@ var background = new UI.Rect({
     size: new Vector2(144, 168),
     backgroundColor: 'white'
   });
-
 var cup = new UI.Rect({
-  position: new Vector2(40, 80),
-  size: new Vector2(64, 85),
+  position: new Vector2(35, 80),
+  size: new Vector2(74, 85),
   borderColor: 'black'
 });
 
@@ -110,39 +118,34 @@ if (water > goal) {
 }
 
 var filling = new UI.Rect({
-  position: new Vector2(40, (165 - (85 * (cupValue / goal)))),
-  size: new Vector2(64, (85 * (cupValue / goal))),
+  position: new Vector2(35, (165 - (85 * (cupValue / goal)))),
+  size: new Vector2(74, (85 * (cupValue / goal))),
   borderColor: 'black',
   backgroundColor: 'blue'
 });
-
 var sidebar = new UI.Rect({
   position: new Vector2(128, 20),
   size: new Vector2(18, 120),
   backgroundColor: 'black'
 });
-
 var add = new UI.Image({
   position: new Vector2(129, 33),
   size: new Vector2(16, 16),
   backgroundColor: 'clear',
   image: 'images/Plus.png',
 });
-
 var subtract = new UI.Image({
   position: new Vector2(129, 117),
   size: new Vector2(16, 16),
   backgroundColor: 'clear',
   image: 'images/minus.png',
 });
-
 var submit = new UI.Image({
   position: new Vector2(130, 75),
   size: new Vector2(16, 16),
   backgroundColor: 'clear',
   image: 'images/enter.png',
 });
-
 var currentLabel = new UI.Text({
     position: new Vector2(2, 5),
     size: new Vector2(144, 30),
@@ -151,7 +154,6 @@ var currentLabel = new UI.Text({
     color: 'black',
     textAlign: 'left'
 });
-
 var currentWater = new UI.Text({
     position: new Vector2(88, 5),
     size: new Vector2(39, 30),
@@ -160,7 +162,6 @@ var currentWater = new UI.Text({
     color: 'black',
     textAlign: 'right'
 });
-
 var goalLabel = new UI.Text({
     position: new Vector2(2, 20),
     size: new Vector2(144, 30),
@@ -169,7 +170,6 @@ var goalLabel = new UI.Text({
     color: 'black',
     textAlign: 'left'
 });
-
 var goalOs = new UI.Text({
     position: new Vector2(87, 20),
     size: new Vector2(40, 30),
@@ -178,7 +178,6 @@ var goalOs = new UI.Text({
     color: 'black',
     textAlign: 'right'
 });
-
 var addLabel = new UI.Text({
     position: new Vector2(2, 35),
     size: new Vector2(144, 30),
@@ -187,7 +186,6 @@ var addLabel = new UI.Text({
     color: 'black',
     textAlign: 'left'
 });
-
 var addingOs = new UI.Text({
     position: new Vector2(87, 35),
     size: new Vector2(40, 30),
@@ -196,13 +194,28 @@ var addingOs = new UI.Text({
     color: 'black',
     textAlign: 'right'
 });
-
 var pORm = new UI.Text({
     position: new Vector2(2, 50),
     size: new Vector2(125, 30),
     font: 'gothic_14_bold',
     text: 'Change by ' + change + ' OZ. \nHold + or - to change',
     color: 'black',
+    textAlign: 'center'
+});
+var addingIcon = new UI.Text({
+    position: new Vector2(30, (155 - (85 * (cupValue / goal)))),
+    size: new Vector2(20, 20),
+    font: 'gothic_14_bold',
+    text: '>',
+    color: 'black',
+    textAlign: 'left'
+});
+var achieveLabel = new UI.Text({
+    position: new Vector2(40, 100),
+    size: new Vector2(65, 65),
+    font: 'gothic_14_bold',
+    text: 'Goal Achieved! 🍺🎉😊',
+    color: '#FFAA00',
     textAlign: 'center'
 });
 
@@ -220,6 +233,11 @@ waterWin.add(addingOs);
 waterWin.add(addLabel);
 waterWin.add(pORm);
 waterWin.add(filling);
+waterWin.add(addingIcon);
+
+if (water >= goal) {
+  waterWin.add(achieveLabel);
+}
 main.show();
 //Define and show main interface
 navigator.geolocation.getCurrentPosition(success, error, options);
@@ -258,7 +276,7 @@ main.on('click', 'up', function(e) {
 
 main.on('click', 'select', function(e) {
   //When middle button in main UI clicked..
-  if (secret_key == 'No Key') {
+  if (secret_key == 'No Key' || secret_key == "") {
     var no_key = new UI.Card({
       title: 'Error!',
       body: 'You have not put in your secret key. Go to the settings to do so'
@@ -315,11 +333,35 @@ no_pos.on('click', 'down', function(e) {
 waterWin.on('click', 'up', function(e) {
   adding = (adding + change);
   addingOs.text(adding + ' OZ');
+  if (water > goal) {
+    cupValue = goal;
+  } else {
+    cupValue = water;
+  }
+  if (((cupValue + adding) / goal) > 1) {
+    addingIcon.position(new Vector2(30, 70));
+  } else if ((((cupValue + adding) / goal) < 0)) {
+    addingIcon.position(new Vector2(30, 155));
+  } else {
+    addingIcon.position(new Vector2(30, (155 - (85 * ((cupValue + adding) / goal)))));
+  }
 });
 
 waterWin.on('click', 'down', function(e) {
   adding = (adding - change);
   addingOs.text(adding + ' OZ');
+  if (water > goal) {
+    cupValue = goal;
+  } else {
+    cupValue = water;
+  }
+  if (((cupValue + adding) / goal) > 1) {
+    addingIcon.position(new Vector2(30, 70));
+  } else if ((((cupValue + adding) / goal) < 0)) {
+    addingIcon.position(new Vector2(30, 155));
+  } else {
+    addingIcon.position(new Vector2(30, (155 - (85 * ((cupValue + adding) / goal)))));
+  }
 });
 
 waterWin.on('click', 'select', function(e) {
@@ -329,16 +371,37 @@ waterWin.on('click', 'select', function(e) {
   } else if (adding < 0 && (water + adding) >= 0) {
     water = (adding + water);
     console.log (water + " current water");
+  } else if (adding < 0 && (water + adding) < 0) {
+    water = 0;
+    console.log (water + " current water");
   }
+  
   currentWater.text(water + ' OZ');
   localStorage.setItem('water', water);
+  
   if (water > goal) {
     cupValue = goal;
   } else {
     cupValue = water;
   }
-  filling.position(new Vector2(40, (165 - (85 * (cupValue / goal)))));
-  filling.size(new Vector2(64, (85 * (cupValue / goal))));
+  
+  filling.position(new Vector2(35, (165 - (85 * (cupValue / goal)))));
+  filling.size(new Vector2(74, (85 * (cupValue / goal))));
+  
+  if (((cupValue + adding) / goal) > 1) {
+    addingIcon.position(new Vector2(30, 70));
+  } else if ((((cupValue + adding) / goal) < 0)) {
+    addingIcon.position(new Vector2(30, 155));
+  } else {
+    addingIcon.position(new Vector2(30, (155 - (85 * ((cupValue + adding) / goal)))));
+  }
+  
+  if (water >= goal) {
+    waterWin.add(achieveLabel);
+    Vibe.vibrate('double');
+  } else {
+    waterWin.remove(achieveLabel);
+  }
 });
 
 waterWin.on('longClick', 'up', function(e) {
@@ -360,6 +423,21 @@ waterWin.on('longClick', 'select', function(e) {
   currentWater.text(water + ' OZ');
   addingOs.text(adding + ' OZ');
   pORm.text('Change by ' + change + ' OZ. \nHold + or - to change');
+  if (water > goal) {
+    cupValue = goal;
+  } else {
+    cupValue = water;
+  }
+  filling.position(new Vector2(35, (165 - (85 * (cupValue / goal)))));
+  filling.size(new Vector2(74, (85 * (cupValue / goal))));
+  if (((cupValue + adding) / goal) > 1) {
+    addingIcon.position(new Vector2(30, 70));
+  } else if ((((cupValue + adding) / goal) < 0)) {
+    addingIcon.position(new Vector2(30, 155));
+  } else {
+    addingIcon.position(new Vector2(30, (155 - (85 * ((cupValue + adding) / goal)))));
+  }
+  waterWin.remove(achieveLabel);
 });
 
 waterWin.on('longClick', 'down', function(e) {
