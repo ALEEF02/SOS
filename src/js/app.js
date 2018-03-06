@@ -8,17 +8,121 @@ var firstName = localStorage.getItem('name') || 'None';
 var goal = localStorage.getItem('goal') || 64;
 var UI = require('ui');
 var timeline = require('timeline');
+var Wakeup = require('wakeup');
 var timeline2 = require('./timeline2');
 var Vibe = require('ui/vibe');
 var Vector2 = require('vector2');
+var date = new Date();
 var restart = new UI.Card({
   title: 'Restart App',
   body: 'Your name and key (hidden) have been registered. Close and open the app to start functionality'
 });
-Pebble.timelineSubscribe('all-pins', function() {
-    console.log('Successfully subscribed to pins');
-}, function() {
-    console.log('Failed to subscribe to pins!');
+
+function pushPins() {
+  var dateObject;
+  var date2Object;
+  var pinTime;
+  var remindTime;
+  var pinTimeObject;
+  var remindTimeObject;
+  var todayD;
+  var tomD;
+  var pin;
+  var wakeTime;
+  var wakeTimeObject;
+  var wakeObject;
+  todayD = (date.getMonth() + '/' + date.getDate() + '/' + date.getFullYear());
+  if (date.getMonth() === 0 || date.getMonth() == 2 || date.getMonth() == 4 || date.getMonth() == 6 || date.getMonth() == 7 || date.getMonth() == 9 || date.getMonth() == 11) {
+    if (date.getDate() == 31) {
+      if (date.getMonth() == 11) {
+        tomD = (0 + '/' + 1 + '/' + (date.getFullYear() + 1));
+      } else {
+        tomD = ((date.getMonth() + 1) + '/' + 1 + '/' + date.getFullYear());
+      }
+    } else {
+      tomD = (date.getMonth() + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
+    }    
+  } else if (date.getMonth() == 3 || date.getMonth() == 5 || date.getMonth() == 8 || date.getMonth() == 10) {
+    if (date.getDate() == 30) {
+      tomD = ((date.getMonth() + 1) + '/' + 1 + '/' + date.getFullYear());
+    } else {
+      tomD = (date.getMonth() + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
+    }    
+  } else if (date.getMonth() == 1) {
+    if (date.getDate() == 28) {
+      tomD = ((date.getMonth() + 1) + '/' + 1 + '/' + date.getFullYear());
+    } else {
+      tomD = (date.getMonth() + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
+    }
+  }
+  
+  dateObject = new Date(tomD);
+  date2Object = new Date(tomD);
+  wakeObject = new Date(tomD);
+  pinTime = '09:00:00 AM';
+  remindTime = '09:00:00 AM';
+  wakeTime = '01:00:00 PM';
+  pinTimeObject = new Date(pinTime);
+  remindTimeObject = new Date(remindTime);
+  wakeTimeObject = new Date(wakeTime);
+  wakeObject.setHours(wakeTimeObject.getHours(), wakeTimeObject.getMinutes(), wakeTimeObject.getSeconds());
+  dateObject.setHours(pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
+  date2Object.setHours(remindTimeObject.getHours(), remindTimeObject.getMinutes(), remindTimeObject.getSeconds());
+    
+  Wakeup.schedule({
+    time: wakeObject,
+    notifyIfMissed: true,
+    // Pass data for the app on launch
+    data: { reason: 'pins' }
+  },
+  function(e) {
+    if (e.failed) {
+      // Log the error reason
+      console.log('Wakeup set failed: ' + e.error);
+    } else {
+      console.log('Wakeup set! Event ID: ' + e.id);
+    }
+  });
+      
+  pin = {
+    "id": todayD + "Water",
+    "time":dateObject.toISOString(),
+    "duration": 40,
+    "layout": {
+      "type": 'calendarPin',
+      "title": 'Lunch 1',
+      "locationName": 'undefined',
+      "body": 'If you have Math, Science, ASB, PAL, or PE/Health for MOD 4 then it is your time to go to lunch',
+      "tinyIcon": "system://images/GENERIC_CONFIRMATION",
+      "primaryColor": 'black',
+      "secondaryColor": 'black',
+      "backgroundColor": 'CobaltBlue'
+    },
+    "reminders": [{
+      "time": date2Object.toISOString(),
+      "layout": {
+        "type": "genericReminder",
+        "tinyIcon": "system://images/GENERIC_CONFIRMATION",
+        "title": 'Lunch 1',
+        "body": 'If you have Math, Science, ASB, PAL, or PE/Health for MOD 4 then it is your time to go to lunch'
+      }
+    }],
+    "actions": [{
+      "title": "View Water",
+      "type": "openWatchApp",
+      "launchCode": 2
+    }]
+  };
+    
+  timeline2.insertUserPin(pin, function(responseText) {
+    console.log('Result: ' + responseText);
+  });
+}
+
+Wakeup.launch(function(e) {
+  if (e.wakeup) {
+    pushPins();
+  }
 });
 
 Pebble.addEventListener('webviewclosed', function(e) {
@@ -29,14 +133,20 @@ Pebble.addEventListener('webviewclosed', function(e) {
   var secret_key = localStorage.getItem('key') || 'No Key';
   if (payload.s_key != "") {
     secret_key = payload.s_key;
+    console.log("Setting key");
+  } else {
+    console.log("Not setting key");
   }
   var firstName = payload.fName;
+  var pins = payload.pushPins;
   goal = payload.wGoal;
   //Set secret key and name then log name
   
   console.log(firstName);
+  console.log(pins + " to pins");
   console.log(goal + " is goal");
   
+  localStorage.setItem('pins', pins);
   localStorage.setItem('key', secret_key);
   localStorage.setItem('goal', goal);
   if (firstName !== "" || firstName !== "None") { 
@@ -44,6 +154,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
   }
   restart.show();
   //Set key in the memory of the watch and show restart card
+  if (pins == "Yes") {
+    Pebble.timelineSubscribe('all-pins', function() {
+      console.log('Successfully subscribed to pins');
+    }, function() {
+      console.log('Failed to subscribe to pins!');
+    });
+    pushPins();    
+  }
 });
 
 var xhttp = new XMLHttpRequest();
@@ -52,9 +170,9 @@ var secret_key = localStorage.getItem('key') || 'No Key';
 var water = localStorage.getItem('water') || 0;
 water = Number(water);
 var change = 4;
+var pins = localStorage.getItem('pins') || "No";
 var adding = 0;
 var cupValue = 0;
-var date = new Date();
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 //console.log("Today: " + today + " Date in memory: " + loggedDate);
