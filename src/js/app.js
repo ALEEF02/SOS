@@ -37,36 +37,42 @@ function pushPins() {
       if (date.getMonth() == 11) {
         tomD = (0 + '/' + 1 + '/' + (date.getFullYear() + 1));
       } else {
-        tomD = ((date.getMonth() + 1) + '/' + 1 + '/' + date.getFullYear());
+        tomD = ((date.getMonth() + 2) + '/' + 1 + '/' + date.getFullYear());
       }
     } else {
-      tomD = (date.getMonth() + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
+      tomD = ((date.getMonth() + 1) + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
     }    
   } else if (date.getMonth() == 3 || date.getMonth() == 5 || date.getMonth() == 8 || date.getMonth() == 10) {
     if (date.getDate() == 30) {
-      tomD = ((date.getMonth() + 1) + '/' + 1 + '/' + date.getFullYear());
+      tomD = ((date.getMonth() + 2) + '/' + 1 + '/' + date.getFullYear());
     } else {
-      tomD = (date.getMonth() + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
+      tomD = ((date.getMonth() + 1) + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
     }    
   } else if (date.getMonth() == 1) {
     if (date.getDate() == 28) {
-      tomD = ((date.getMonth() + 1) + '/' + 1 + '/' + date.getFullYear());
+      tomD = ((date.getMonth() + 2) + '/' + 1 + '/' + date.getFullYear());
     } else {
-      tomD = (date.getMonth() + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
+      tomD = ((date.getMonth() + 1) + '/' + (date.getDate() + 1) + '/' + date.getFullYear());
     }
+  } else {
+    console.log("ERROR: Month not defined");
   }
-  
+  console.log("Today is " + todayD);
+  console.log("tommorow is " + tomD);
   dateObject = new Date(tomD);
+  console.log("tommorow in object form: " + dateObject.toISOString());
   date2Object = new Date(tomD);
   wakeObject = new Date(tomD);
-  pinTime = '09:00:00 AM';
-  remindTime = '09:00:00 AM';
-  wakeTime = '01:00:00 PM';
+  pinTime = "09:00:00 AM";
+  remindTime = "09:00:00 AM";
+  wakeTime = "01:00:00 PM";
   pinTimeObject = new Date(pinTime);
+  console.log("time in object form: " + pinTimeObject.toISOString());
   remindTimeObject = new Date(remindTime);
   wakeTimeObject = new Date(wakeTime);
   wakeObject.setHours(wakeTimeObject.getHours(), wakeTimeObject.getMinutes(), wakeTimeObject.getSeconds());
   dateObject.setHours(pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
+  console.log("tommorow in object form with time: " + dateObject.toISOString());
   date2Object.setHours(remindTimeObject.getHours(), remindTimeObject.getMinutes(), remindTimeObject.getSeconds());
     
   Wakeup.schedule({
@@ -118,6 +124,13 @@ function pushPins() {
     console.log('Result: ' + responseText);
   });
 }
+function subcribe() {
+  Pebble.timelineSubscribe('all-pins', function() {
+    console.log('Successfully subscribed to pins');
+  }, function(error) {
+    console.log('Failed to subscribe to pins! Error: ' + error);
+  });
+}
 
 Wakeup.launch(function(e) {
   if (e.wakeup) {
@@ -139,6 +152,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
   }
   var firstName = payload.fName;
   var pins = payload.pushPins;
+  console.log(pins);
   goal = payload.wGoal;
   //Set secret key and name then log name
   
@@ -155,14 +169,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
   restart.show();
   //Set key in the memory of the watch and show restart card
   if (pins == "Yes") {
-    Pebble.timelineSubscribe('all-pins', function() {
-      console.log('Successfully subscribed to pins');
-    }, function() {
-      console.log('Failed to subscribe to pins!');
-    });
-    pushPins();    
+    subcribe();
+    setTimeout(function() {
+      pushPins();  
+    }, 1000);
   }
 });
+
+subcribe();
 
 var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
