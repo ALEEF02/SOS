@@ -31,6 +31,8 @@ function pushPins() {
   var wakeTime;
   var wakeTimeObject;
   var wakeObject;
+  var id;
+  
   todayD = (date.getMonth() + '/' + date.getDate() + '/' + date.getFullYear());
   if (date.getMonth() === 0 || date.getMonth() == 2 || date.getMonth() == 4 || date.getMonth() == 6 || date.getMonth() == 7 || date.getMonth() == 9 || date.getMonth() == 11) {
     if (date.getDate() == 31) {
@@ -63,18 +65,36 @@ function pushPins() {
   console.log("tommorow in object form: " + dateObject.toISOString());
   date2Object = new Date(tomD);
   wakeObject = new Date(tomD);
-  pinTime = "09:00:00 AM";
-  remindTime = "09:00:00 AM";
-  wakeTime = "01:00:00 PM";
-  pinTimeObject = new Date(pinTime);
-  console.log("time in object form: " + pinTimeObject.toISOString());
-  remindTimeObject = new Date(remindTime);
-  wakeTimeObject = new Date(wakeTime);
+  pinTime = "";
+  remindTime = "";
+  wakeTime = "13:00:00";
+  pinTimeObject = new Date();
+  //console.log("time in object form: " + pinTimeObject.toISOString());
+  remindTimeObject = new Date();
+  wakeTimeObject = new Date();
+  pinTimeObject.setHours(09);
+  pinTimeObject.setMinutes(00);
+  pinTimeObject.setSeconds(00);
+  remindTimeObject.setHours(09);
+  remindTimeObject.setMinutes(00);
+  remindTimeObject.setSeconds(00);
+  wakeTimeObject.setHours(13);
+  wakeTimeObject.setMinutes(00);
+  wakeTimeObject.setSeconds(00);
+  id = (date.getDate() + date.getMonth() + date.getFullYear() + pinTimeObject.getHours() + pinTimeObject.getMinutes());
   wakeObject.setHours(wakeTimeObject.getHours(), wakeTimeObject.getMinutes(), wakeTimeObject.getSeconds());
+  console.log("Pin hours, minutes, and seconds: " + pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
   dateObject.setHours(pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
   console.log("tommorow in object form with time: " + dateObject.toISOString());
   date2Object.setHours(remindTimeObject.getHours(), remindTimeObject.getMinutes(), remindTimeObject.getSeconds());
-    
+  
+  Wakeup.each(function(e) {
+    console.log('Before cancel wakeup ' + e.id + ': ' + JSON.stringify(e));
+  });
+  Wakeup.cancel('all');
+  Wakeup.each(function(e) {
+    console.log('After cancel wakeup ' + e.id + ': ' + JSON.stringify(e));
+  });
   Wakeup.schedule({
     time: wakeObject,
     notifyIfMissed: true,
@@ -91,15 +111,15 @@ function pushPins() {
   });
       
   pin = {
-    "id": todayD + "Water",
+    "id": id + "Water",
     "time":dateObject.toISOString(),
-    "duration": 40,
+    "duration": undefined,
     "layout": {
-      "type": 'calendarPin',
-      "title": 'Lunch 1',
-      "locationName": 'undefined',
-      "body": 'If you have Math, Science, ASB, PAL, or PE/Health for MOD 4 then it is your time to go to lunch',
-      "tinyIcon": "system://images/GENERIC_CONFIRMATION",
+      "type": 'genericPin',
+      "title": 'Water Goal',
+      "locationName": undefined,
+      "body": 'Try to hit your daily goal of ' + goal + ' oz today!',
+      "tinyIcon": "system://images/GENERIC_SMS",
       "primaryColor": 'black',
       "secondaryColor": 'black',
       "backgroundColor": 'CobaltBlue'
@@ -108,22 +128,23 @@ function pushPins() {
       "time": date2Object.toISOString(),
       "layout": {
         "type": "genericReminder",
-        "tinyIcon": "system://images/GENERIC_CONFIRMATION",
-        "title": 'Lunch 1',
-        "body": 'If you have Math, Science, ASB, PAL, or PE/Health for MOD 4 then it is your time to go to lunch'
+        "tinyIcon": "system://images/GENERIC_SMS",
+        "title": 'Water Goal',
+        "body": 'Try to hit your daily goal of ' + goal + ' oz today!'
       }
     }],
     "actions": [{
-      "title": "View Water",
+      "title": "View today's water",
       "type": "openWatchApp",
       "launchCode": 2
     }]
   };
     
   timeline2.insertUserPin(pin, function(responseText) {
-    console.log('Result: ' + responseText);
+    console.log('Result on pin: ' + responseText);
   });
 }
+
 function subcribe() {
   Pebble.timelineSubscribe('all-pins', function() {
     console.log('Successfully subscribed to pins');
@@ -581,4 +602,10 @@ waterWin.on('longClick', 'down', function(e) {
       change = 8;
     }
     pORm.text('Change by ' + change + ' OZ. Hold + or - to change');
+});
+
+timeline.launch(function(e) {
+  if (e.launchCode == 2) {
+    waterWin.show();
+  }
 });
