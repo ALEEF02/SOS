@@ -17,6 +17,11 @@ var restart = new UI.Card({
   title: 'Restart App',
   body: 'Your name and key (hidden) have been registered. Close and open the app to start functionality'
 });
+var pinNot = new UI.Card({
+  title: 'Daily Pin',
+  body: 'Sorry to bother, just pushing a pin. Please close this'
+});
+var pins = localStorage.getItem('pins') || "No";
 
 function pushPins() {
   var dateObject;
@@ -78,8 +83,8 @@ function pushPins() {
   remindTimeObject.setHours(09);
   remindTimeObject.setMinutes(00);
   remindTimeObject.setSeconds(00);
-  wakeTimeObject.setHours(13);
-  wakeTimeObject.setMinutes(00);
+  wakeTimeObject.setHours(09);
+  wakeTimeObject.setMinutes(01);
   wakeTimeObject.setSeconds(00);
   id = (date.getDate() + date.getMonth() + date.getFullYear() + pinTimeObject.getHours() + pinTimeObject.getMinutes());
   wakeObject.setHours(wakeTimeObject.getHours(), wakeTimeObject.getMinutes(), wakeTimeObject.getSeconds());
@@ -87,14 +92,12 @@ function pushPins() {
   dateObject.setHours(pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
   console.log("tommorow in object form with time: " + dateObject.toISOString());
   date2Object.setHours(remindTimeObject.getHours(), remindTimeObject.getMinutes(), remindTimeObject.getSeconds());
+  console.log("Wake up hours, minutes, and seconds: " + wakeObject.getHours(), wakeObject.getMinutes(), wakeObject.getSeconds() + " FULL: " + wakeObject.toISOString());
   
   Wakeup.each(function(e) {
     console.log('Before cancel wakeup ' + e.id + ': ' + JSON.stringify(e));
   });
   Wakeup.cancel('all');
-  Wakeup.each(function(e) {
-    console.log('After cancel wakeup ' + e.id + ': ' + JSON.stringify(e));
-  });
   Wakeup.schedule({
     time: wakeObject,
     notifyIfMissed: true,
@@ -142,22 +145,17 @@ function pushPins() {
     
   timeline2.insertUserPin(pin, function(responseText) {
     console.log('Result on pin: ' + responseText);
+    Vibe.vibrate('short');
   });
 }
 
-function subcribe() {
+function subscribe() {
   Pebble.timelineSubscribe('all-pins', function() {
     console.log('Successfully subscribed to pins');
   }, function(error) {
     console.log('Failed to subscribe to pins! Error: ' + error);
   });
 }
-
-Wakeup.launch(function(e) {
-  if (e.wakeup) {
-    pushPins();
-  }
-});
 
 Pebble.addEventListener('webviewclosed', function(e) {
   console.log("Config closed");
@@ -172,32 +170,33 @@ Pebble.addEventListener('webviewclosed', function(e) {
     console.log("Not setting key");
   }
   var firstName = payload.fName;
-  var pins = payload.pushPins;
-  console.log(pins);
+  pins = payload.pushPins;
   goal = payload.wGoal;
   //Set secret key and name then log name
   
-  console.log(firstName);
+  console.log(firstName + " is the name");
   console.log(pins + " to pins");
   console.log(goal + " is goal");
   
   localStorage.setItem('pins', pins);
   localStorage.setItem('key', secret_key);
   localStorage.setItem('goal', goal);
-  if (firstName !== "" || firstName !== "None") { 
+  if (firstName !== "" || firstName !== "None") {
     localStorage.setItem('name', firstName);
   }
   restart.show();
   //Set key in the memory of the watch and show restart card
   if (pins == "Yes") {
-    subcribe();
+    subscribe();
     setTimeout(function() {
       pushPins();  
     }, 1000);
+  } else {
+    Vibe.vibrate('short');
   }
 });
 
-subcribe();
+subscribe();
 
 var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
@@ -205,7 +204,6 @@ var secret_key = localStorage.getItem('key') || 'No Key';
 var water = localStorage.getItem('water') || 0;
 water = Number(water);
 var change = 4;
-var pins = localStorage.getItem('pins') || "No";
 var adding = 0;
 var cupValue = 0;
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
@@ -221,7 +219,6 @@ if (today !== loggedDate) {
 }
 var latitude = 0.00000;
 var longitude = 0.00000;
-var response = 'N/A';
 var updating = false;
 //Set base lat and long
 function success(pos) {
@@ -245,6 +242,10 @@ var options = {
 var main = new UI.Card({
   title: 'Welcome!',
   body: 'Press up to use the water counter and press select to send an SOS'
+});
+var confirm = new UI.Card({
+  title: 'Please confirm!',
+  body: 'Long click select to send your SOS, else hit back'
 });
 var no_pos = new UI.Card({
   title: 'No GPS!',
@@ -397,6 +398,13 @@ navigator.geolocation.getCurrentPosition(success, error, options);
 //Find current lat and long
 
 function sendSOS() {
+  var IP = new UI.Card({
+    title: 'Sending...',
+    body: 'One moment'
+  });
+  IP.show();
+  confirm.hide();
+  var response = 'N/A';
   var trigger_data = {};
   trigger_data.value1 = latitude;
   trigger_data.value2 = longitude;
@@ -412,14 +420,18 @@ function sendSOS() {
     console.log('Got response: ' + this.responseText);
     response = this.responseText;
   };
-  //Sets reponse to API response 
-  var sent = new UI.Card({
-    title: 'Sent',
-    body: 'Recipient should recieve message shortly. Response from API: ' + response
-  });
-  sent.show();
-  updating = false;
-  //Define and show the sent card
+  //Sets reponse to API response
+  setTimeout(function(){
+    var sent = new UI.Card({
+      title: 'Sent',
+      body: 'Recipient should recieve message shortly. Response from API: ' + response
+    });
+    sent.show();
+    IP.hide();
+    Vibe.vibrate('double');
+    updating = false;
+    //Define and show the sent card
+  }, 3000);
 }
 
 main.on('click', 'up', function(e) {
@@ -428,7 +440,11 @@ main.on('click', 'up', function(e) {
 });
 
 main.on('click', 'select', function(e) {
-  //When middle button in main UI clicked..
+  confirm.show();
+});
+
+confirm.on('longClick', 'select', function(e) {
+  //When middle button in confirm screen UI clicked..
   if (secret_key == 'No Key' || secret_key == "") {
     var no_key = new UI.Card({
       title: 'Error!',
@@ -606,6 +622,16 @@ waterWin.on('longClick', 'down', function(e) {
 
 timeline.launch(function(e) {
   if (e.launchCode == 2) {
+    console.log("Launched from pin!");
     waterWin.show();
+  }
+});
+
+Wakeup.launch(function(e) {
+  if (e.wakeup) {
+    console.log("Launched by wakeup! Pushing pin...");
+    pushPins();
+    main.hide();
+    pinNot.show();
   }
 });
