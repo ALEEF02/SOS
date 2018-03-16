@@ -33,7 +33,6 @@ function pushPins() {
   var todayD;
   var tomD;
   var pin;
-  var wakeTime;
   var wakeTimeObject;
   var wakeObject;
   var id;
@@ -72,7 +71,6 @@ function pushPins() {
   wakeObject = new Date(tomD);
   pinTime = "";
   remindTime = "";
-  wakeTime = "13:00:00";
   pinTimeObject = new Date();
   //console.log("time in object form: " + pinTimeObject.toISOString());
   remindTimeObject = new Date();
@@ -208,6 +206,9 @@ var adding = 0;
 var cupValue = 0;
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
+var wakeTime = localStorage.getItem('wakeTime') || date.now();
+var currTime = date.now();
+console.log("Logged wake time: " + wakeTime);
 //console.log("Today: " + today + " Date in memory: " + loggedDate);
 if (today !== loggedDate) {
   water = 0;
@@ -633,5 +634,13 @@ Wakeup.launch(function(e) {
     pushPins();
     main.hide();
     pinNot.show();
+  } else {
+    //Need to add detection if using pins and reschedual the wakeup
+    console.log("Not launched by wakeup. Checking wakeup");
+    if (wakeTime < currTime) {
+      console.log("Missed wakeup by " + (currTime - wakeTime) + " MS");
+    } else {
+      console.log("Wake up ahead by " + (wakeTime - currTime) + " MS");
+    }
   }
 });
