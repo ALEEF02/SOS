@@ -206,8 +206,8 @@ var adding = 0;
 var cupValue = 0;
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
-var wakeTime = localStorage.getItem('wakeTime') || date.now();
-var currTime = date.now();
+var wakeTime = localStorage.getItem('wakeTime') || date.getTime();
+var currTime = date.getTime();
 console.log("Logged wake time: " + wakeTime);
 //console.log("Today: " + today + " Date in memory: " + loggedDate);
 if (today !== loggedDate) {
