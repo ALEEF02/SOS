@@ -21,7 +21,13 @@ var pinNot = new UI.Card({
   title: 'Daily Pin',
   body: 'Sorry to bother, just pushing a pin. Please close this'
 });
+var missedWake = new UI.Card({
+  title: 'Daily Pin',
+  body: "It seems your watch was off at the time off the wakeup. Tommorow's pins was just pushed."
+});
 var pins = localStorage.getItem('pins') || "No";
+var wakeTime = localStorage.getItem('wakeTime') || date.getTime();
+//Define some UI libraries
 
 function pushPins() {
   var dateObject;
@@ -37,7 +43,7 @@ function pushPins() {
   var wakeObject;
   var id;
   
-  todayD = (date.getMonth() + '/' + date.getDate() + '/' + date.getFullYear());
+  todayD = ((date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear());
   if (date.getMonth() === 0 || date.getMonth() == 2 || date.getMonth() == 4 || date.getMonth() == 6 || date.getMonth() == 7 || date.getMonth() == 9 || date.getMonth() == 11) {
     if (date.getDate() == 31) {
       if (date.getMonth() == 11) {
@@ -63,6 +69,7 @@ function pushPins() {
   } else {
     console.log("ERROR: Month not defined");
   }
+  //Calculates Tommorow
   console.log("Today is " + todayD);
   console.log("tommorow is " + tomD);
   dateObject = new Date(tomD);
@@ -84,13 +91,14 @@ function pushPins() {
   wakeTimeObject.setHours(09);
   wakeTimeObject.setMinutes(01);
   wakeTimeObject.setSeconds(00);
-  id = (date.getDate() + date.getMonth() + date.getFullYear() + pinTimeObject.getHours() + pinTimeObject.getMinutes());
+  id = (date.getDate() + date.getMonth() + date.getFullYear() + pinTimeObject.getHours() + pinTimeObject.getMinutes() + date.getTime());
   wakeObject.setHours(wakeTimeObject.getHours(), wakeTimeObject.getMinutes(), wakeTimeObject.getSeconds());
   console.log("Pin hours, minutes, and seconds: " + pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
   dateObject.setHours(pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
   console.log("tommorow in object form with time: " + dateObject.toISOString());
   date2Object.setHours(remindTimeObject.getHours(), remindTimeObject.getMinutes(), remindTimeObject.getSeconds());
   console.log("Wake up hours, minutes, and seconds: " + wakeObject.getHours(), wakeObject.getMinutes(), wakeObject.getSeconds() + " FULL: " + wakeObject.toISOString());
+  //Creates date objects for wakeup time, pin time, and reminder time
   
   Wakeup.each(function(e) {
     console.log('Before cancel wakeup ' + e.id + ': ' + JSON.stringify(e));
@@ -110,7 +118,10 @@ function pushPins() {
       console.log('Wakeup set! Event ID: ' + e.id);
     }
   });
-      
+  localStorage.setItem('wakeTime', wakeObject.getTime());
+  console.log("Wake time in MS from jan 1 1970: " + wakeObject.getTime());
+  //Scheduals the wakeup
+  
   pin = {
     "id": id + "Water",
     "time":dateObject.toISOString(),
@@ -140,11 +151,13 @@ function pushPins() {
       "launchCode": 2
     }]
   };
-    
-  timeline2.insertUserPin(pin, function(responseText) {
-    console.log('Result on pin: ' + responseText);
-    Vibe.vibrate('short');
-  });
+  //Creates the pin
+  
+    timeline2.insertUserPin(pin, function(responseText) {
+      console.log('Result on pin: ' + responseText);
+      Vibe.vibrate('short');
+    });
+  //Pushes the pin
 }
 
 function subscribe() {
@@ -188,13 +201,11 @@ Pebble.addEventListener('webviewclosed', function(e) {
     subscribe();
     setTimeout(function() {
       pushPins();  
-    }, 1000);
+    }, 2000);
   } else {
     Vibe.vibrate('short');
   }
 });
-
-subscribe();
 
 var xhttp = new XMLHttpRequest();
 var secret_key = localStorage.getItem('key') || 'No Key';
@@ -206,10 +217,8 @@ var adding = 0;
 var cupValue = 0;
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
-var wakeTime = localStorage.getItem('wakeTime') || date.getTime();
 var currTime = date.getTime();
 console.log("Logged wake time: " + wakeTime);
-//console.log("Today: " + today + " Date in memory: " + loggedDate);
 if (today !== loggedDate) {
   water = 0;
   localStorage.setItem('water', water);
@@ -218,6 +227,7 @@ if (today !== loggedDate) {
 } else {
   console.log("Same day... Current: " + today + "  Logged: " + loggedDate);
 }
+//If it's not the same day, reset the daily water counter
 var latitude = 0.00000;
 var longitude = 0.00000;
 var updating = false;
@@ -271,6 +281,7 @@ if (water > goal) {
 } else {
   cupValue = water;
 }
+//If the amt of water is more than goal, set display value to goal so it doesn't overflow
 
 var filling = new UI.Rect({
   position: new Vector2(35, (165 - (85 * (cupValue / goal)))),
@@ -393,6 +404,7 @@ waterWin.add(addingIcon);
 if (water >= goal) {
   waterWin.add(achieveLabel);
 }
+//If you reach the goal, display a message
 main.show();
 //Define and show main interface
 navigator.geolocation.getCurrentPosition(success, error, options);
@@ -626,6 +638,7 @@ timeline.launch(function(e) {
     console.log("Launched from pin!");
     waterWin.show();
   }
+  //When launched from timeline, show the water screen
 });
 
 Wakeup.launch(function(e) {
@@ -634,13 +647,21 @@ Wakeup.launch(function(e) {
     pushPins();
     main.hide();
     pinNot.show();
+    //When launched by wakeup push the daily pins and display a message
   } else {
-    //Need to add detection if using pins and reschedual the wakeup
     console.log("Not launched by wakeup. Checking wakeup");
     if (wakeTime < currTime) {
       console.log("Missed wakeup by " + (currTime - wakeTime) + " MS");
+      if (pins == "Yes") {
+        console.log("Pins are on! Rescheduling wakeup and pushing pins");
+        pushPins();
+        missedWake.show();
+      } else {
+        console.log("Pins are set to off. Choosing not to send");
+      }
     } else {
       console.log("Wake up ahead by " + (wakeTime - currTime) + " MS");
     }
+    //If the wakeup was missed, reschedule the wakeup and push the daily pin
   }
 });
