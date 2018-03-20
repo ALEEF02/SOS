@@ -91,7 +91,7 @@ function pushPins() {
   wakeTimeObject.setHours(09);
   wakeTimeObject.setMinutes(01);
   wakeTimeObject.setSeconds(00);
-  id = (date.getDate() + date.getMonth() + date.getFullYear() + pinTimeObject.getHours() + pinTimeObject.getMinutes() + date.getTime());
+  id = (dateObject.getMonth() + "_" + dateObject.getDate() + "_" + dateObject.getFullYear());
   wakeObject.setHours(wakeTimeObject.getHours(), wakeTimeObject.getMinutes(), wakeTimeObject.getSeconds());
   console.log("Pin hours, minutes, and seconds: " + pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
   dateObject.setHours(pinTimeObject.getHours(), pinTimeObject.getMinutes(), pinTimeObject.getSeconds());
@@ -123,7 +123,7 @@ function pushPins() {
   //Scheduals the wakeup
   
   pin = {
-    "id": id + "Water",
+    "id": id + "_Water",
     "time":dateObject.toISOString(),
     "duration": undefined,
     "layout": {
@@ -131,7 +131,7 @@ function pushPins() {
       "title": 'Water Goal',
       "locationName": undefined,
       "body": 'Try to hit your daily goal of ' + goal + ' oz today!',
-      "tinyIcon": "system://images/GENERIC_SMS",
+      "tinyIcon": "system://images/GENERIC_CONFIRMATION",
       "primaryColor": 'black',
       "secondaryColor": 'black',
       "backgroundColor": 'CobaltBlue'
@@ -140,7 +140,7 @@ function pushPins() {
       "time": date2Object.toISOString(),
       "layout": {
         "type": "genericReminder",
-        "tinyIcon": "system://images/GENERIC_SMS",
+        "tinyIcon": "system://images/GENERIC_CONFIRMATION",
         "title": 'Water Goal',
         "body": 'Try to hit your daily goal of ' + goal + ' oz today!'
       }
@@ -152,9 +152,12 @@ function pushPins() {
     }]
   };
   //Creates the pin
+    timeline2.deleteUserPin(pin, function(responseText) {
+      console.log('Result on deleting pin: ' + responseText);
+    });
   
     timeline2.insertUserPin(pin, function(responseText) {
-      console.log('Result on pin: ' + responseText);
+      console.log('Result on pushing pin: ' + responseText);
       Vibe.vibrate('short');
     });
   //Pushes the pin
@@ -174,13 +177,15 @@ Pebble.addEventListener('webviewclosed', function(e) {
   var payload = JSON.parse(e.response);
   //Take config input and parse with JSON
   var secret_key = localStorage.getItem('key') || 'No Key';
+  var firstName = payload.fName;
+  
   if (payload.s_key != "") {
     secret_key = payload.s_key;
     console.log("Setting key");
   } else {
     console.log("Not setting key");
   }
-  var firstName = payload.fName;
+  
   pins = payload.pushPins;
   goal = payload.wGoal;
   //Set secret key and name then log name
@@ -192,9 +197,14 @@ Pebble.addEventListener('webviewclosed', function(e) {
   localStorage.setItem('pins', pins);
   localStorage.setItem('key', secret_key);
   localStorage.setItem('goal', goal);
-  if (firstName !== "" || firstName !== "None") {
+  
+  if (firstName !== "" && firstName !== "None") {
     localStorage.setItem('name', firstName);
+    console.log("Name set");
+  } else {
+    console.log("Keeping current name");
   }
+  
   restart.show();
   //Set key in the memory of the watch and show restart card
   if (pins == "Yes") {

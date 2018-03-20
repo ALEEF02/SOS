@@ -17,7 +17,7 @@ function timelineRequest(pin, type, topics, apiKey, callback) {
   // Create XHR
   var xhr = new XMLHttpRequest();
   xhr.onload = function () {
-    console.log('timeline: response received: ' + this.responseText);
+    console.log('Put response: ' + this.responseText);
     callback(this.responseText);
   };
   xhr.open(type, url);
@@ -40,6 +40,37 @@ function timelineRequest(pin, type, topics, apiKey, callback) {
   }, function(error) { console.log('timeline: error getting timeline token: ' + error); });
 }
 
+function timelineRemove(pin, type, topics, apiKey, callback) {
+  // User or shared?
+  var url = API_URL_ROOT + 'v1/' + ((topics !== null) ? 'shared/' : 'user/') + 'pins/' + pin.id;
+  console.log(url + ' is the url');
+  // Create XHR
+  var xhr = new XMLHttpRequest();
+  xhr.onload = function () {
+    console.log('Remove response: ' + this.responseText);
+    callback(this.responseText);
+  };
+  xhr.open(type, url);
+
+  // Set headers
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  if(topics !== null) {
+    xhr.setRequestHeader('X-Pin-Topics', '' + topics.join(','));
+    xhr.setRequestHeader('X-API-Key', '' + apiKey);
+  }
+
+  // Get token
+  Pebble.getTimelineToken(function(token) {
+    // Add headers
+    xhr.setRequestHeader('X-User-Token', '' + token);
+
+    // Send
+    xhr.send(JSON.stringify(pin));
+    console.log('timeline: request sent.');
+  }, function(error) { console.log('timeline: error getting timeline token: ' + error); });
+}
+
+
 /**
  * Insert a pin into the timeline for this user.
  * @param pin The JSON pin to insert.
@@ -55,7 +86,7 @@ function insertUserPin(pin, callback) {
  * @param callback The callback to receive the responseText after the request has completed.
  */
 function deleteUserPin(pin, callback) {
-  timelineRequest(pin, 'DELETE', null, null, callback);
+  timelineRemove(pin, 'DELETE', null, null, callback);
 }
 
 /**
