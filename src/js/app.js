@@ -10,12 +10,13 @@ var UI = require('ui');
 var timeline = require('timeline');
 var Wakeup = require('wakeup');
 var timeline2 = require('./timeline2');
+var Voice = require('ui/voice');
 var Vibe = require('ui/vibe');
 var Vector2 = require('vector2');
 var date = new Date();
 var restart = new UI.Card({
   title: 'Restart App',
-  body: 'Your name and key (hidden) have been registered. Close and open the app to start functionality'
+  body: 'Your settings have been recorded. Close and open the app to start functionality'
 });
 var pinNot = new UI.Card({
   title: 'Daily Pin',
@@ -225,6 +226,7 @@ water = Number(water);
 var change = 4;
 var adding = 0;
 var cupValue = 0;
+var notes = localStorage.getItem('notes') || [{title: "Add Note"}];
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var currTime = date.getTime();
@@ -262,7 +264,14 @@ var options = {
 
 var main = new UI.Card({
   title: 'Welcome!',
-  body: 'Press up to use the water counter and press select to send an SOS'
+  body: 'Press up to use the water counter, press select to send an SOS, or press down for notes'
+});
+var menu = new UI.Menu({
+  highlightBackgroundColor: 'blue',
+  sections: [{
+    title: 'Notes',
+    items: notes
+  }]
 });
 var confirm = new UI.Card({
   title: 'Please confirm!',
@@ -274,6 +283,8 @@ var no_pos = new UI.Card({
 });
 var waterWin = new UI.Window({});
 waterWin.status(false);
+var selectedIndex;
+var selectedTitle;
 
 var background = new UI.Rect({
     position: new Vector2(0, 0),
@@ -464,6 +475,37 @@ main.on('click', 'up', function(e) {
 
 main.on('click', 'select', function(e) {
   confirm.show();
+});
+
+main.on('click', 'down', function(e) {
+  //When down button in main UI clicked..
+  menu.show();
+});
+
+menu.on('select', function(e) {
+  selectedTitle = e.item.title;
+  selectedIndex = e.itemIndex;
+  console.log(selectedTitle + " was selected at index " + selectedIndex);
+  if (selectedTitle == "Add Note") {
+    console.log("Adding note");
+    Voice.dictate('start', true, function(e) {
+      if (e.err) {
+        console.log('Error: ' + e.err);
+        return;
+      }
+      console.log('Success: ' + e.transcription);
+      notes[notes.length] = {title: e.transcription};
+      menu.items(0, 0, notes);
+      console.log(JSON.stringify(notes, null, 4));
+    });
+  } else {
+    notes.splice(selectedIndex, 1);
+    menu.items(0, 0, notes);
+  }
+  //Need to fix not storing as object
+  localStorage.setItem('notes', notes);
+  menu.hide();
+  menu.show();
 });
 
 confirm.on('longClick', 'select', function(e) {
