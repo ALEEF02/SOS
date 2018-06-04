@@ -7,6 +7,7 @@ Pebble.addEventListener('showConfiguration', function(e) {
 var firstName = localStorage.getItem('name') || 'None';
 var goal = localStorage.getItem('goal') || 64;
 var UI = require('ui');
+var Settings = require('settings');
 var timeline = require('timeline');
 var Wakeup = require('wakeup');
 var timeline2 = require('./timeline2');
@@ -31,6 +32,7 @@ var wakeTime = localStorage.getItem('wakeTime') || date.getTime();
 //Define some UI libraries
 
 function pushPins() {
+  //define various variables
   var dateObject;
   var date2Object;
   var pinTime;
@@ -44,6 +46,7 @@ function pushPins() {
   var wakeObject;
   var id;
   
+  //Set today's and tommorows date using 0-11 and 0-30
   todayD = ((date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear());
   if (date.getMonth() === 0 || date.getMonth() == 2 || date.getMonth() == 4 || date.getMonth() == 6 || date.getMonth() == 7 || date.getMonth() == 9 || date.getMonth() == 11) {
     if (date.getDate() == 31) {
@@ -70,6 +73,7 @@ function pushPins() {
   } else {
     console.log("ERROR: Month not defined");
   }
+  
   //Calculates Tommorow
   console.log("Today is " + todayD);
   console.log("tommorow is " + tomD);
@@ -80,7 +84,7 @@ function pushPins() {
   pinTime = "";
   remindTime = "";
   pinTimeObject = new Date();
-  //console.log("time in object form: " + pinTimeObject.toISOString());
+  //Sets hours and minutes for wake up and pin
   remindTimeObject = new Date();
   wakeTimeObject = new Date();
   pinTimeObject.setHours(09);
@@ -101,6 +105,7 @@ function pushPins() {
   console.log("Wake up hours, minutes, and seconds: " + wakeObject.getHours(), wakeObject.getMinutes(), wakeObject.getSeconds() + " FULL: " + wakeObject.toISOString());
   //Creates date objects for wakeup time, pin time, and reminder time
   
+  //Reschedual wake up
   Wakeup.each(function(e) {
     console.log('Before cancel wakeup ' + e.id + ': ' + JSON.stringify(e));
   });
@@ -125,13 +130,13 @@ function pushPins() {
   
   pin = {
     "id": id + "_Water",
-    "time":dateObject.toISOString(),
+    "time": dateObject.toISOString(),
     "duration": undefined,
     "layout": {
       "type": 'genericPin',
       "title": 'Water Goal',
       "locationName": undefined,
-      "body": 'Try to hit your daily goal of ' + goal + ' oz today!',
+      "body": 'Try to hit your daily goal of ' + goal + ' oz today, ' + firstName + '!',
       "tinyIcon": "system://images/GENERIC_CONFIRMATION",
       "primaryColor": 'black',
       "secondaryColor": 'black',
@@ -143,7 +148,7 @@ function pushPins() {
         "type": "genericReminder",
         "tinyIcon": "system://images/GENERIC_CONFIRMATION",
         "title": 'Water Goal',
-        "body": 'Try to hit your daily goal of ' + goal + ' oz today!'
+        "body": 'Try to hit your daily goal of ' + goal + ' oz today, ' + firstName + '!'
       }
     }],
     "actions": [{
@@ -170,6 +175,7 @@ function subscribe() {
   }, function(error) {
     console.log('Failed to subscribe to pins! Error: ' + error);
   });
+  //Subscribe to pins
 }
 
 Pebble.addEventListener('webviewclosed', function(e) {
@@ -183,6 +189,7 @@ Pebble.addEventListener('webviewclosed', function(e) {
   if (payload.s_key != "") {
     secret_key = payload.s_key;
     console.log("Setting key");
+    console.log("Key is: " + secret_key.substring(0,8) + "...");
   } else {
     console.log("Not setting key");
   }
@@ -210,7 +217,9 @@ Pebble.addEventListener('webviewclosed', function(e) {
   //Set key in the memory of the watch and show restart card
   if (pins == "Yes") {
     subscribe();
+    console.log("Delaying pins for 2s");
     setTimeout(function() {
+      console.log("Starting push");
       pushPins();  
     }, 2000);
   } else {
@@ -226,10 +235,14 @@ water = Number(water);
 var change = 4;
 var adding = 0;
 var cupValue = 0;
-var notes = localStorage.getItem('notes') || [{title: "Add Note"}];
+//var notes = localStorage.getItem('notes') || [{title: 'Add Note'}];
+var notes = Settings.option('storedNotes') || [{title: 'Add Note'}];
+//var notes = [{title: 'Add Note'}];
 var today = (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var loggedDate = localStorage.getItem('date') || (date.getMonth() + "/" + date.getDate() + "/"+ date.getFullYear());
 var currTime = date.getTime();
+console.log("Notes: ");
+console.log(JSON.stringify(notes, null, 4));
 console.log("Logged wake time: " + wakeTime);
 if (today !== loggedDate) {
   water = 0;
@@ -248,10 +261,12 @@ function success(pos) {
   latitude = pos.coords.latitude;
   longitude = pos.coords.longitude;
   console.log('lat= ' + pos.coords.latitude + ' lon= ' + pos.coords.longitude);
+  //set latitude and longitude
 }
 
 function error(err) {
   console.log('location error (' + err.code + '): ' + err.message);
+  //log any location-related error
 }
 
 var options = {
@@ -266,7 +281,7 @@ var main = new UI.Card({
   title: 'Welcome!',
   body: 'Press up to use the water counter, press select to send an SOS, or press down for notes'
 });
-var menu = new UI.Menu({
+var noteMenu = new UI.Menu({
   highlightBackgroundColor: 'blue',
   sections: [{
     title: 'Notes',
@@ -285,6 +300,7 @@ var waterWin = new UI.Window({});
 waterWin.status(false);
 var selectedIndex;
 var selectedTitle;
+//Define main and sub interfaces
 
 var background = new UI.Rect({
     position: new Vector2(0, 0),
@@ -468,44 +484,62 @@ function sendSOS() {
   }, 3000);
 }
 
+function storeNotes() {
+  noteMenu.items(0, 0, notes);
+  console.log("New notes: " + JSON.stringify(notes, null, 4));
+  Settings.option('storedNotes', notes);
+  console.log("Reading notes from mem: " + JSON.stringify(Settings.option('storedNotes'), null, 4));
+  localStorage.setItem('notes', notes);
+  //store the notes in memory
+  
+  noteMenu.hide();
+  setTimeout(function() {
+    noteMenu.show();
+  }, 200);
+}
+
+console.log("Key is: " + secret_key.substring(0,8) + "...");
+
 main.on('click', 'up', function(e) {
   //When up button in main UI clicked..
   waterWin.show();
 });
 
 main.on('click', 'select', function(e) {
+  //Confirms sending of SOS
   confirm.show();
 });
 
 main.on('click', 'down', function(e) {
   //When down button in main UI clicked..
-  menu.show();
+  noteMenu.show();
 });
 
-menu.on('select', function(e) {
+noteMenu.on('select', function(e) {
   selectedTitle = e.item.title;
   selectedIndex = e.itemIndex;
   console.log(selectedTitle + " was selected at index " + selectedIndex);
+  //When the select button on the note menu is clicked set the title and index to the selected variables and log it
   if (selectedTitle == "Add Note") {
+    //If "Add note" is selected then start the dictation process
     console.log("Adding note");
     Voice.dictate('start', true, function(e) {
       if (e.err) {
+        //if an error, log it and abort the adding process
         console.log('Error: ' + e.err);
         return;
       }
+      //If successful, log the transcription, add it to the notes and log it
       console.log('Success: ' + e.transcription);
       notes[notes.length] = {title: e.transcription};
-      menu.items(0, 0, notes);
-      console.log(JSON.stringify(notes, null, 4));
+      storeNotes();
     });
   } else {
+    //If any other note is selected, log it then delete it
+    console.log("Deleting note: " + selectedIndex);
     notes.splice(selectedIndex, 1);
-    menu.items(0, 0, notes);
+    storeNotes();
   }
-  //Need to fix not storing as object
-  localStorage.setItem('notes', notes);
-  menu.hide();
-  menu.show();
 });
 
 confirm.on('longClick', 'select', function(e) {
@@ -567,11 +601,13 @@ no_pos.on('click', 'down', function(e) {
 waterWin.on('click', 'up', function(e) {
   adding = (adding + change);
   addingOs.text(adding + ' OZ');
+  //Set adding amount to the current plus the change variable and display it OS
   if (water > goal) {
     cupValue = goal;
   } else {
     cupValue = water;
   }
+  //Prevents overlay of arrow texture on text above cup
   if (((cupValue + adding) / goal) > 1) {
     addingIcon.position(new Vector2(30, 70));
   } else if ((((cupValue + adding) / goal) < 0)) {
@@ -579,16 +615,19 @@ waterWin.on('click', 'up', function(e) {
   } else {
     addingIcon.position(new Vector2(30, (155 - (85 * ((cupValue + adding) / goal)))));
   }
+  //Changes arrow's position
 });
 
 waterWin.on('click', 'down', function(e) {
   adding = (adding - change);
   addingOs.text(adding + ' OZ');
+  //Set adding amount to the current minus the change variable and display it OS
   if (water > goal) {
     cupValue = goal;
   } else {
     cupValue = water;
   }
+  //Prevents overlay of arrow texture on text below cup
   if (((cupValue + adding) / goal) > 1) {
     addingIcon.position(new Vector2(30, 70));
   } else if ((((cupValue + adding) / goal) < 0)) {
@@ -596,6 +635,7 @@ waterWin.on('click', 'down', function(e) {
   } else {
     addingIcon.position(new Vector2(30, (155 - (85 * ((cupValue + adding) / goal)))));
   }
+  //Changes arrow's position
 });
 
 waterWin.on('click', 'select', function(e) {
@@ -647,9 +687,11 @@ waterWin.on('longClick', 'up', function(e) {
       change = 16;
     }
     pORm.text('Change by ' + change + ' OZ. Hold + or - to change');
+  //Adds to the amount to increment by and display it OS
 });
 
 waterWin.on('longClick', 'select', function(e) {
+  //Manually reset all water related variables and OS textures
   water = 0;
   adding = 0;
   change = 4;
@@ -683,6 +725,7 @@ waterWin.on('longClick', 'down', function(e) {
       change = 8;
     }
     pORm.text('Change by ' + change + ' OZ. Hold + or - to change');
+  //Subtracts to the amount to increment by and display it OS
 });
 
 timeline.launch(function(e) {
